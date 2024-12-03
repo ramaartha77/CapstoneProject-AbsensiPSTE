@@ -4,148 +4,104 @@ namespace App\Filament\Dosen\Resources;
 
 use App\Filament\Dosen\Resources\DaftarKelasResource\Pages;
 use App\Models\Kelas;
-use App\Models\Matkul;
-use App\Models\Account;
-use Filament\Forms\Form;
+use App\Models\Kehadiran;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Actions\CreateAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\DeleteAction;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DaftarKelasResource extends Resource
 {
     protected static ?string $model = Kelas::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-    protected static ?string $modelLabel = 'Daftar Kelas';
-
-    protected static ?string $navigationLabel = 'Daftar Kelas';
-
-    protected static ?string $pluralModelLabel = 'Daftar Kelas';
-
-    public static function form(Form $form): Form
-    {
-        return $form->schema([
-            Select::make('id_matkul')
-                ->relationship('matkul', 'nama_matkul')
-                ->required()
-                ->searchable()
-                ->preload()
-                ->label('Mata Kuliah'),
-
-            Select::make('id_akun')
-                ->relationship('account', 'nama')
-                ->required()
-                ->searchable()
-                ->preload()
-                ->label('Dosen'),
-
-            TextInput::make('nama_kelas')
-                ->required()
-                ->maxLength(255)
-                ->label('Nama Kelas'),
-
-            TextInput::make('ruangan')
-                ->required()
-                ->maxLength(255)
-                ->label('Ruangan'),
-
-            Select::make('hari')
-                ->options([
-                    'Senin' => 'Senin',
-                    'Selasa' => 'Selasa',
-                    'Rabu' => 'Rabu',
-                    'Kamis' => 'Kamis',
-                    'Jumat' => 'Jumat',
-                    'Sabtu' => 'Sabtu',
-                ])
-                ->required()
-                ->label('Hari'),
-
-            TextInput::make('waktu')
-                ->required()
-                ->label('Waktu'),
-
-            TextInput::make('thn_smt')
-                ->required()
-                ->label('Tahun/Semester')
-                ->placeholder('Contoh: 2023/2024-1'),
-        ]);
-    }
+    protected static ?string $modelLabel = 'Mulai Kelas';
+    protected static ?string $navigationLabel = 'Mulai Kelas';
+    protected static ?string $pluralModelLabel = 'Mulai Kelas';
+    protected static ?string $slug = 'daftar-kelas';
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('nama_kelas')
-                    ->sortable()
-                    ->searchable()
-                    ->label('Nama Kelas'),
-
-                TextColumn::make('matkul.nama_matkul')
-                    ->sortable()
-                    ->searchable()
-                    ->label('Mata Kuliah'),
-
-                TextColumn::make('account.nama')
-                    ->sortable()
-                    ->searchable()
-                    ->label('Dosen'),
-
-                TextColumn::make('ruangan')
-                    ->sortable()
-                    ->searchable()
-                    ->label('Ruangan'),
-
-                TextColumn::make('hari')
-                    ->sortable()
-                    ->searchable()
+                Tables\Columns\TextColumn::make('hari')
                     ->label('Hari'),
-
-                TextColumn::make('waktu')
-                    ->sortable()
-                    ->searchable()
+                Tables\Columns\TextColumn::make('nama_kelas')
+                    ->label('Nama Kelas')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('matkul.nama_matkul')
+                    ->label('Mata Kuliah')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('ruangan.nama_ruangan')
+                    ->label('Ruangan'),
+                Tables\Columns\TextColumn::make('waktu')
                     ->label('Waktu'),
-
-                TextColumn::make('thn_smt')
-                    ->sortable()
-                    ->searchable()
-                    ->label('Tahun/Semester'),
-            ])
-            ->defaultSort('nama_kelas', 'asc')
-            ->filters([
-                //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
-    }
+                Action::make('recap')
+                    ->label('Rekap')
+                    ->icon('heroicon-o-document-text')
+                    ->action(function (Kelas $record) {
+                        $pertemuans = $record->pertemuan()
+                            ->orderBy('tgl_pertemuan')
+                            ->get();
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
+                        $students = $record->mahasiswa()
+                            ->orderBy('nama')
+                            ->get();
+
+                        $attendanceData = [];
+                        foreach ($students as $student) {
+                            $studentAttendance = [];
+                            foreach ($pertemuans as $pertemuan) {
+                                $kehadiran = Kehadiran::where('id_akun', $student->id_akun)
+                                    ->where('id_pertemuan', $pertemuan->id_pertemuan)
+                                    ->first();
+
+                                $studentAttendance[] = $kehadiran ? $kehadiran->status : null;
+                            }
+
+                            $attendanceData[] = [
+                                'student' => $student,
+                                'attendance' => $studentAttendance
+                            ];
+                        }
+
+                        $pdf = PDF::loadView('pdf.attendance-recap', [
+                            'kelas' => $record,
+                            'pertemuans' => $pertemuans,
+                            'attendanceData' => $attendanceData
+                        ])->setPaper('a4', 'landscape');
+
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->output();
+                        }, "rekap-kehadiran-{$record->nama_kelas}.pdf");
+                    })
+                    ->button()
+            ])
+            ->query(fn() => Kelas::where('id_akun', auth()->user()->id_akun))
+            ->filters([
+                Tables\Filters\SelectFilter::make('hari')
+                    ->label('Hari')
+                    ->options([
+                        'Senin' => 'Senin',
+                        'Selasa' => 'Selasa',
+                        'Rabu' => 'Rabu',
+                        'Kamis' => 'Kamis',
+                        'Jumat' => 'Jumat',
+                        'Sabtu' => 'Sabtu',
+                        'Minggu' => 'Minggu',
+                    ]),
+            ])
+            ->bulkActions([]);
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListDaftarKelas::route('/'),
-            'create' => Pages\CreateDaftarKelas::route('/create'),
-            'edit' => Pages\EditDaftarKelas::route('/{record}/edit'),
+            'daftarMahasiswa' => Pages\DaftarMahasiswa::route('/{record}/daftar-mahasiswa'),
         ];
     }
 }

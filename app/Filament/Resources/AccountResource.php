@@ -17,6 +17,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Hash;
+use Filament\Tables\Filters\SelectFilter;
 
 class AccountResource extends Resource
 {
@@ -33,12 +34,12 @@ class AccountResource extends Resource
                     ->maxLength(45),
 
                 TextInput::make('nim')
+                    ->label('NIM/NIP')
                     ->maxLength(45)
                     ->nullable(),
 
                 TextInput::make('email')
                     ->email()
-                    ->required()
                     ->maxLength(45)
                     ->unique(Account::class, 'email', ignoreRecord: true),
 
@@ -77,13 +78,19 @@ class AccountResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('nim')->label('NIM')->searchable(),
+                TextColumn::make('nim')->label('NIM/NIP')->searchable(),
                 TextColumn::make('nama')->label('Nama')->searchable(),
                 TextColumn::make('email')->label('Email')->searchable(),
                 TextColumn::make('role')->label('Role')->searchable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('role')
+                    ->options([
+                        'admin' => 'Admin',
+                        'dosen' => 'Dosen',
+                        'mahasiswa' => 'Mahasiswa',
+                    ])
+                    ->label('Filter by Role')
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

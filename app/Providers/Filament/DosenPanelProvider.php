@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -10,6 +9,7 @@ use Filament\Pages;
 use App\Filament\Pages\Auth\Login;
 use App\Http\Middleware\CheckRole;
 use Filament\Panel;
+use App\Filament\Pages\Auth\EditProfile;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
@@ -21,6 +21,7 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
+
 class DosenPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -29,6 +30,9 @@ class DosenPanelProvider extends PanelProvider
             ->id('dosen')
             ->path('dosen')
             ->login(Login::class)
+            ->resources([
+                \App\Filament\Dosen\Resources\DaftarKelasResource::class,
+            ])
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -37,10 +41,8 @@ class DosenPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Dosen/Widgets'), for: 'App\\Filament\\Dosen\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -57,7 +59,8 @@ class DosenPanelProvider extends PanelProvider
                 Authenticate::class,
                 CheckRole::class . ':dosen',
             ])
-            ->login(Login::class)
-        ;
+            ->brandName('SISTEM PRESENSI PSTE')
+            ->maxContentWidth('full')
+            ->profile(EditProfile::class);
     }
 }

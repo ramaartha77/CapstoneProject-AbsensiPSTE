@@ -2,14 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Pertemuan extends Model
 {
-    public $timestamps = false;
-
-    protected $table = 'pertemuan';
+    protected $table = 'pertemuans';
     protected $primaryKey = 'id_pertemuan';
 
     protected $fillable = ['id_kelas', 'id_alat_absen', 'nama_pertemuan', 'tgl_pertemuan', 'materi', 'aktivasi_absen'];

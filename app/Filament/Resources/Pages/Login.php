@@ -13,10 +13,11 @@ use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Notifications\Notification;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Illuminate\Support\Facades\Log;
-use Filament\Models\Contracts\HasName;
 
 class Login extends BaseLogin
 {
+    protected static ?string $title = 'Sistem Absensi PSTE';
+
     public function form(Form $form): Form
     {
         return $form
@@ -41,10 +42,6 @@ class Login extends BaseLogin
                     'seconds' => $exception->secondsUntilAvailable,
                     'minutes' => ceil($exception->secondsUntilAvailable / 60),
                 ]))
-                ->body(array_key_exists('body', __('filament-panels::pages/auth/login.notifications.throttled') ?: []) ? __('filament-panels::pages/auth/login.notifications.throttled.body', [
-                    'seconds' => $exception->secondsUntilAvailable,
-                    'minutes' => ceil($exception->secondsUntilAvailable / 60),
-                ]) : null)
                 ->danger()
                 ->send();
 
@@ -53,45 +50,17 @@ class Login extends BaseLogin
 
         $data = $this->form->getState();
 
-        // Add logging for debugging
-        Log::info('Auth attempt', [
-            'username' => $data['username'],
-            'password_provided' => !empty($data['password']),
-        ]);
-
-        // Use Auth::attempt() instead of manual verification
         if (!Auth::attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
             $this->throwFailureValidationException();
         }
 
-        $account = Auth::user();
+        $user = Auth::user();
 
-        // debug
-        Log::info('User authenticated', ['id' => $account->id_akun, 'username' => $account->username, 'name' => $account->nama]);
-
-        $panel = Filament::getCurrentPanel();
-
-        $requiredRole = match ($panel->getId()) {
-            'admin' => 'admin',
-            'dosen' => 'dosen',
-            'mahasiswa' => 'mahasiswa',
-            default => null,
-        };
-
-        if ($requiredRole && $account->role !== $requiredRole) {
-            Auth::logout();
-            return $this->redirectToAppropriatePanel($account->role);
-        }
 
         session()->regenerate();
 
-        Log::info('Authentication completed', [
-            'user' => Auth::user(),
-            'filament_user' => Filament::auth()->user(),
-            'session' => session()->all()
-        ]);
 
-        return app(LoginResponse::class);
+        return $this->redirectToAppropriatePanel($user->role);
     }
 
     protected function throwFailureValidationException(): never
@@ -112,9 +81,9 @@ class Login extends BaseLogin
     protected function redirectToAppropriatePanel(string $role): LoginResponse
     {
         $redirectUrl = match ($role) {
-            'admin' => '/admin',
-            'dosen' => '/dosen',
-            'mahasiswa' => '/mahasiswa',
+            'admin' => '/admin', // Changed from /admin/dashboard
+            'dosen' => '/dosen', // Changed from /dosen/dashboard
+            'mahasiswa' => '/mahasiswa', // Changed from /mahasiswa/dashboard
             default => '/',
         };
 
@@ -126,10 +95,5 @@ class Login extends BaseLogin
                 return redirect()->to($this->url);
             }
         };
-    }
-
-    protected function getUserName(Account $user): string
-    {
-        return $user->getName();
     }
 }

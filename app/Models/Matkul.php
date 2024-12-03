@@ -32,4 +32,15 @@ class Matkul extends Model
     {
         return $this->hasMany(Kelas::class, 'id_matkul', 'id_matkul');
     }
+    public function krs()
+    {
+        return $this->hasManyThrough(
+            Krs::class,
+            Kelas::class,
+            'id_matkul', // Foreign key on kelas table...
+            'id_kelas', // Foreign key on krs table...
+            'id_matkul', // Local key on matkul table...
+            'id_kelas' // Local key on kelas table...
+        );
+    }
 }

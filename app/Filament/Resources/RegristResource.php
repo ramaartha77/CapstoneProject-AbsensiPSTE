@@ -14,6 +14,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class RegristResource extends Resource
 {
@@ -92,15 +93,33 @@ class RegristResource extends Resource
                             $nim = $get('nim');
 
                             if ($uid && $nim) {
-                                DB::table('accounts')
-                                    ->where('nim', $nim)
-                                    ->update(['UID' => $uid]);
+                                // Cek apakah UID sudah terdaftar di akun lain
+                                $existingUID = DB::table('accounts')->where('UID', $uid)->exists();
 
-                                Notification::make()
-                                    ->title('Registration successful')
-                                    ->body('The UID has been updated for the account.')
-                                    ->success()
-                                    ->send();
+                                if ($existingUID) {
+                                    Notification::make()
+                                        ->title('Registration failed')
+                                        ->body('UID sudah terdaftar')
+                                        ->danger()
+                                        ->send();
+                                } else {
+                                    // Update UID jika belum digunakan
+                                    DB::table('accounts')
+                                        ->where('nim', $nim)
+                                        ->update(['UID' => $uid]);
+
+                                    Notification::make()
+                                        ->title('Registration successful')
+                                        ->body('The UID has been updated for the account.')
+                                        ->success()
+                                        ->send();
+
+                                    // Clear the form fields
+                                    $set('UID', null);
+                                    $set('nim', null);
+                                    $set('role', null);
+                                    $set('nama', null);
+                                }
                             } else {
                                 Notification::make()
                                     ->title('Registration failed')
@@ -111,9 +130,31 @@ class RegristResource extends Resource
                         })
                         ->disabled(fn(Get $get): bool => !$get('UID') || !$get('nim')),
 
+
+
                     //Button Untuk Scan Kartu RFID (Ignore This Button and Logic)
-                    Actions\Action::make('Scan Kartu')
+                    Actions\Action::make('scan_kartu')
                         ->label('Scan Kartu')
+                        ->action(function (Set $set) {
+                            // Membaca file UID dari storage
+                            $uid = Storage::disk('local')->get('uid.txt');
+
+                            if ($uid) {
+                                $set('UID', trim($uid)); // Mengatur UID pada state form
+                                Notification::make()
+                                    ->title('Scan Berhasil')
+                                    ->body('UID berhasil diambil dari kartu.')
+                                    ->success()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('Scan Gagal')
+                                    ->body('Gagal membaca UID dari kartu.')
+                                    ->danger()
+                                    ->send();
+                            }
+                        })
+                        ->color('primary')
                 ]),
             ])
             ->statePath('data');

@@ -13,10 +13,12 @@ return new class extends Migration
             $table->string('id_matkul', 45);
             $table->unsignedBigInteger('id_akun');
             $table->string('nama_kelas', 50);
-            $table->string('ruangan', 45);
+            $table->unsignedBigInteger('id_ruangan');
             $table->enum('hari', ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']);
             $table->string('waktu', 45);
-            $table->string('thn_smt', 5);
+            $table->string('id_smt', 5);
+            $table->string('thn_smt', 45);
+
             $table->timestamps();
 
             $table->foreign('id_matkul')
@@ -28,6 +30,9 @@ return new class extends Migration
                 ->references('id_akun')
                 ->on('accounts')
                 ->onDelete('cascade');
+
+            $table->foreign('id_ruangan')->references('id_ruangan')->on('t_ruangan')->onDelete('cascade');
+            $table->foreign('id_smt')->references('id_smt')->on('t_smt')->onDelete('cascade');
         });
     }
 

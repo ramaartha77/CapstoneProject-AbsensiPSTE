@@ -9,9 +9,15 @@ class Krs extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = ['id_akun', 'id_kelas']; // Composite key
+    public $incrementing = false; // Since we're using composite key
+
+    protected $fillable = [
+        'id_akun',
+        'id_kelas',  // Changed from id_matkul to id_kelas
+    ];
+
     protected $table = 'krs';
-    protected $primaryKey = 'id_krs';
-    protected $fillable = ['id_akun', 'id_kelas'];
 
     // Relasi ke Akun
     public function akun()

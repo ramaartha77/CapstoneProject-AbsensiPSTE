@@ -4,13 +4,17 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\KelasResource\Pages;
 use App\Models\Kelas;
-use App\Models\Matkul;
-use App\Models\Account;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Tables\Actions\Action;
+use Filament\Forms\Component;
+use App\Models\Kehadiran;
+use Filament\Tables\Filters\SelectFilter;
+
 
 class KelasResource extends Resource
 {
@@ -33,7 +37,9 @@ class KelasResource extends Resource
 
                 Forms\Components\Select::make('id_akun')
                     ->label('Dosen')
-                    ->relationship('account', 'nama')
+                    ->relationship('account', 'nama', function ($query) {
+                        $query->where('role', 'dosen'); // Filter users with the role 'dosen'
+                    })
                     ->searchable()
                     ->preload()
                     ->required(),
@@ -43,10 +49,16 @@ class KelasResource extends Resource
                     ->required()
                     ->maxLength(50),
 
-                Forms\Components\TextInput::make('ruangan')
+                Forms\Components\Select::make('id_ruangan')  // Change from 'ruangan' to 'id_ruangan'
                     ->label('Ruangan')
-                    ->required()
-                    ->maxLength(45),
+                    ->options(function () {
+                        return \App\Models\Ruangan::query()
+                            ->orderBy('id_ruangan')
+                            ->pluck('nama_ruangan', 'id_ruangan');
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->required(),
 
                 Forms\Components\Select::make('hari')
                     ->label('Hari')
@@ -67,10 +79,25 @@ class KelasResource extends Resource
                     ->hoursStep(1)
                     ->minutesStep(30),
 
-                Forms\Components\TextInput::make('thn_smt')
-                    ->label('Tahun/Semester')
+                Forms\Components\Select::make('id_smt')
+                    ->label('Semester')
+                    ->relationship('semester', 'nama_smt')
+                    ->options(function () {
+                        return \App\Models\Smt::query()
+                            ->orderBy('id_smt')
+                            ->pluck('nama_smt', 'id_smt');
+                    })
+                    ->afterStateUpdated(function (Forms\Set $set, $state) {
+                        // Find the semester and set thn_smt to its nama_smt
+                        $semester = \App\Models\Smt::find($state);
+                        if ($semester) {
+                            $set('thn_smt', $semester->nama_smt);
+                        }
+                    })
+                    ->live()
+                    ->searchable()
+                    ->preload()
                     ->required()
-                    ->maxLength(5),
             ]);
     }
 
@@ -78,6 +105,10 @@ class KelasResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id_smt')
+                    ->label('Tahun/Semester')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('matkul.nama_matkul')
                     ->label('Mata Kuliah')
                     ->searchable()
@@ -88,27 +119,31 @@ class KelasResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('nama_kelas')
-                    ->label('Nama Kelas')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('ruangan')
+                Tables\Columns\TextColumn::make('ruangan.nama_ruangan')
                     ->label('Ruangan')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('hari')
                     ->label('Hari')
+                    ->sortable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('waktu')
                     ->label('Waktu'),
 
-                Tables\Columns\TextColumn::make('thn_smt')
-                    ->label('Tahun/Semester'),
+
             ])
             ->filters([
-                //
+                SelectFilter::make('id_smt')
+                    ->label('Filter by Tahun Semester')
+                    ->options(function () {
+                        return \App\Models\Smt::query()
+                            ->orderBy('id_smt')
+                            ->pluck('nama_smt', 'id_smt')
+                            ->toArray();
+                    }),
             ])
+
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -117,6 +152,52 @@ class KelasResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])
+            ->actions([
+                Action::make('recap')
+                    ->label('Rekap')
+                    ->icon('heroicon-o-document-text')
+                    ->action(function (Kelas $record) {
+                        // Get all pertemuan ordered by date
+                        $pertemuans = $record->pertemuan()
+                            ->orderBy('tgl_pertemuan')
+                            ->get();
+
+                        // Get all students ordered by name
+                        $students = $record->mahasiswa()
+                            ->orderBy('nama')
+                            ->get();
+
+                        $attendanceData = [];
+                        foreach ($students as $student) {
+                            $studentAttendance = [];
+                            foreach ($pertemuans as $pertemuan) {
+                                $kehadiran = Kehadiran::where('id_akun', $student->id_akun)
+                                    ->where('id_pertemuan', $pertemuan->id_pertemuan)
+                                    ->first();
+
+                                // Get status or set as null if no record exists
+                                $studentAttendance[] = $kehadiran ? $kehadiran->status : null;
+                            }
+
+                            $attendanceData[] = [
+                                'student' => $student,
+                                'attendance' => $studentAttendance
+                            ];
+                        }
+
+                        // Generate PDF in landscape mode
+                        $pdf = PDF::loadView('pdf.attendance-recap', [
+                            'kelas' => $record,
+                            'pertemuans' => $pertemuans,
+                            'attendanceData' => $attendanceData
+                        ])->setPaper('a4', 'landscape');
+
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->output();
+                        }, "rekap-kehadiran-{$record->nama_kelas}.pdf");
+                    })
+                    ->button()
             ]);
     }
 

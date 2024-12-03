@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
 
+
 class Account extends Authenticatable implements FilamentUser, HasName
 {
     use Notifiable;
@@ -67,6 +68,17 @@ class Account extends Authenticatable implements FilamentUser, HasName
         return 'username';
     }
 
+    // Already in your Account.php model
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->foto) {
+            return asset('storage/' . $this->foto);
+        }
+
+        // Return a default avatar if no photo is set
+        return asset('images/default-avatar.png');
+    }
+
     // Relasi ke KRS
     public function krs()
     {
@@ -76,5 +88,10 @@ class Account extends Authenticatable implements FilamentUser, HasName
     public function kehadiran()
     {
         return $this->hasMany(Kehadiran::class, 'id_akun');
+    }
+
+    public function kelas()
+    {
+        return $this->belongsToMany(Kelas::class, 'krs', 'id_akun', 'id_kelas');
     }
 }

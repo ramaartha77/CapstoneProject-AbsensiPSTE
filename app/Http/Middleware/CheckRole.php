@@ -35,6 +35,12 @@ class CheckRole
             return $this->redirectToAppropriatePanel($user->role);
         }
 
+        if ($user->role === null) {
+            Log::error('User role is null', ['user_id' => $user->id_akun]);
+            return redirect()->route('filament.admin.auth.login');
+        }
+        
+
         return $next($request);
     }
 

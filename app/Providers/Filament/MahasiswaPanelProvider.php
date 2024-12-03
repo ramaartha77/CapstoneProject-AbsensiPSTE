@@ -19,6 +19,9 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Http\Middleware\CheckRole;
+use App\Filament\Pages\Auth\EditProfile;
+
+
 
 class MahasiswaPanelProvider extends PanelProvider
 {
@@ -39,7 +42,6 @@ class MahasiswaPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Mahasiswa/Widgets'), for: 'App\\Filament\\Mahasiswa\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -56,7 +58,8 @@ class MahasiswaPanelProvider extends PanelProvider
                 Authenticate::class,
                 CheckRole::class . ':mahasiswa',
             ])
+            ->brandName('SISTEM PRESENSI PSTE')
             ->login(Login::class)
-        ;
+            ->profile(EditProfile::class);
     }
 }

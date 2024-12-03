@@ -4,19 +4,22 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\MatkulResource\Pages;
 use App\Models\Matkul;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Filament\Tables\Filters\SelectFilter;
 
 class MatkulResource extends Resource
 {
     protected static ?string $model = Matkul::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationLabel = 'Mata Kuliah';
+    protected static ?string $modelLabel = 'Mata Kuliah';
+    protected static ?string $pluralModelLabel = 'Mata Kuliah';
 
     public static function form(Form $form): Form
     {
@@ -29,8 +32,11 @@ class MatkulResource extends Resource
 
                 Select::make('id_akun')
                     ->label('Dosen')
-                    ->required()
-                    ->relationship('account', 'nama'),
+                    ->relationship('account', 'nama', function ($query) {
+                        $query->where('role', 'dosen');
+                    })
+                    ->preload()
+                    ->required(),
 
                 TextInput::make('nama_matkul')
                     ->label('Nama Matkul')
@@ -57,14 +63,38 @@ class MatkulResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id_matkul')->label('ID Matkul'),
-                Tables\Columns\TextColumn::make('account.nama')->label('Dosen'),
-                Tables\Columns\TextColumn::make('nama_matkul')->label('Nama Matkul'),
-                Tables\Columns\TextColumn::make('sks')->label('SKS'),
-                Tables\Columns\TextColumn::make('semester')->label('Semester'),
+                Tables\Columns\TextColumn::make('id_matkul')
+                    ->label('ID Matkul')
+                    ->searchable(), // Make ID Matkul searchable
+
+                Tables\Columns\TextColumn::make('account.nama')
+                    ->label('Dosen')
+                    ->searchable(), // Make Dosen searchable
+
+                Tables\Columns\TextColumn::make('nama_matkul')
+                    ->label('Nama Matkul')
+                    ->searchable(), // Make Nama Matkul searchable
+
+                Tables\Columns\TextColumn::make('sks')
+                    ->label('SKS'),
+
+                Tables\Columns\TextColumn::make('semester')
+                    ->label('Semester')
+                    ->sortable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('semester')
+                    ->label('Semester')
+                    ->options([
+                        '1' => 'Semester 1',
+                        '2' => 'Semester 2',
+                        '3' => 'Semester 3',
+                        '4' => 'Semester 4',
+                        '5' => 'Semester 5',
+                        '6' => 'Semester 6',
+                        '7' => 'Semester 7',
+                        '8' => 'Semester 8',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -73,7 +103,8 @@ class MatkulResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('id_matkul'); // Optional default sorting
     }
 
     public static function getRelations(): array

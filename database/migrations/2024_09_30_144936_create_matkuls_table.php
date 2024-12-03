@@ -13,7 +13,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_akun');
             $table->string('nama_matkul', 45);
             $table->tinyInteger('sks');
-            $table->tinyInteger('semester');
+            $table->integer('semester');
             $table->timestamps();
 
             $table->foreign('id_akun')->references('id_akun')->on('accounts')->onDelete('cascade');

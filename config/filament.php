@@ -122,4 +122,8 @@ return [
 
     'livewire_loading_delay' => 'default',
 
+
+    'title' => 'Sistem Absensi PSTE',
+
+
 ];

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->foreign('id_pertemuan')->references('id_pertemuan')->on('pertemuans')->onDelete('cascade');
 
             // Foreign Key to alat_absen (correct as is)
-            $table->string('id_alat_absen', 20);
+            $table->string('id_alat_absen', 20)->nullable();
             $table->foreign('id_alat_absen')->references('id_alat_absen')->on('alat_absen')->onDelete('cascade');
 
             // Other columns
