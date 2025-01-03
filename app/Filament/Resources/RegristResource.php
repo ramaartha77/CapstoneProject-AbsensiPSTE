@@ -130,17 +130,14 @@ class RegristResource extends Resource
                         })
                         ->disabled(fn(Get $get): bool => !$get('UID') || !$get('nim')),
 
-
-
-                    //Button Untuk Scan Kartu RFID (Ignore This Button and Logic)
                     Actions\Action::make('scan_kartu')
                         ->label('Scan Kartu')
                         ->action(function (Set $set) {
-                            // Membaca file UID dari storage
+
                             $uid = Storage::disk('local')->get('uid.txt');
 
                             if ($uid) {
-                                $set('UID', trim($uid)); // Mengatur UID pada state form
+                                $set('UID', trim($uid));
                                 Notification::make()
                                     ->title('Scan Berhasil')
                                     ->body('UID berhasil diambil dari kartu.')

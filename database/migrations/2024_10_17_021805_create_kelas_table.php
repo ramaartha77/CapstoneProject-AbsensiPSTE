@@ -15,9 +15,10 @@ return new class extends Migration
             $table->string('nama_kelas', 50);
             $table->unsignedBigInteger('id_ruangan');
             $table->enum('hari', ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']);
-            $table->string('waktu', 45);
+            $table->string('waktu_mulai', 45);
+            $table->string('waktu_selesai', 45);
             $table->string('id_smt', 5);
-            $table->string('thn_smt', 45);
+
 
             $table->timestamps();
 

@@ -13,8 +13,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
+use Filament\Forms\Components\DatePicker;
+
 
 class ListDaftarKelas extends ListRecords
 {
@@ -34,7 +34,7 @@ class ListDaftarKelas extends ListRecords
                 ->label('Mulai Kelas')
                 ->modalActions(fn($action) => [
                     $action->makeModalSubmitAction('create', ['exit' => true])
-                        ->color('primary') // Set modal action color to primary
+                        ->color('primary')
                 ])
                 ->form([
                     Select::make('nama_kelas')
@@ -52,17 +52,15 @@ class ListDaftarKelas extends ListRecords
                                 return [];
                             }
 
-                            // Get all existing pertemuan for this class
                             $existingPertemuan = Pertemuan::where('id_kelas', $kelasId)
                                 ->pluck('nama_pertemuan')
                                 ->toArray();
 
-                            // Create array of all possible pertemuan (1-16)
                             $allPertemuan = collect(range(1, 16))->map(function ($number) {
                                 return "Pertemuan $number";
                             });
 
-                            // Filter out existing pertemuan
+
                             return $allPertemuan->reject(function ($pertemuan) use ($existingPertemuan) {
                                 return in_array($pertemuan, $existingPertemuan);
                             })->mapWithKeys(function ($pertemuan) {
@@ -72,19 +70,32 @@ class ListDaftarKelas extends ListRecords
                         ->required()
                         ->label('Nama Pertemuan'),
 
+                    DatePicker::make('tgl_pertemuan')
+                        ->required()
+                        ->label('Tanggal Pertemuan'),
+
+                    Select::make('type_pertemuan')
+                        ->options([
+                            'online' => 'Online',
+                            'offline' => 'Offline',
+                        ])
+                        ->required()
+                        ->label('Tipe Pertemuan'),
+
                     Textarea::make('materi')
                         ->label('Materi')
                         ->required(),
 
                 ])
                 ->action(function (array $data) {
-                    // Create new pertemuan
+
                     $pertemuan = Pertemuan::create([
                         'id_kelas' => $data['nama_kelas'],
                         'nama_pertemuan' => $data['pertemuan'],
                         'materi' => $data['materi'],
-                        'tgl_pertemuan' => now(),
+                        'tgl_pertemuan' => $data['tgl_pertemuan'],
                         'aktivasi_absen' => true,
+                        'type_pertemuan' => $data['type_pertemuan'],
                     ]);
 
                     Notification::make()
@@ -92,7 +103,6 @@ class ListDaftarKelas extends ListRecords
                         ->success()
                         ->send();
 
-                    // Redirect to student list page
                     return redirect(DaftarKelasResource::getUrl('daftarMahasiswa', ['record' => $pertemuan->id_pertemuan]));
                 }),
         ];

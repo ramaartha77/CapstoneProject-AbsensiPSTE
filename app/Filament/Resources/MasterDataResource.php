@@ -6,8 +6,10 @@ use App\Filament\Resources\MasterDataResource\Pages;
 use App\Models\Ruangan;
 use App\Models\Smt;
 use Filament\Forms;
+
 use Filament\Resources\Resource;
 use Filament\Tables\Table;
+use App\Models\Alat;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\DeleteAction;
@@ -25,13 +27,16 @@ class MasterDataResource extends Resource
     {
         return $table
             ->query(function ($livewire) {
-                return $livewire->activeTab === 'semester'
-                    ? Smt::query()
-                    : Ruangan::query();
+                return match ($livewire->activeTab) {
+                    'semester' => Smt::query(),
+                    'alat' => Alat::query(),
+                    default => Ruangan::query(),
+                };
             })
             ->persistSortInSession()
             ->persistFiltersInSession()
             ->columns([
+                // Ruangan Columns
                 TextColumn::make('id_ruangan')
                     ->label('ID')
                     ->sortable()
@@ -42,6 +47,7 @@ class MasterDataResource extends Resource
                     ->sortable()
                     ->visible(fn($livewire) => $livewire->activeTab === 'ruangan'),
 
+                // Semester Columns
                 TextColumn::make('id_smt')
                     ->label('ID')
                     ->sortable()
@@ -51,6 +57,22 @@ class MasterDataResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->visible(fn($livewire) => $livewire->activeTab === 'semester'),
+
+                // Alat Columns
+                TextColumn::make('id_alat_absen')
+                    ->label('ID')
+                    ->sortable()
+                    ->visible(fn($livewire) => $livewire->activeTab === 'alat'),
+                TextColumn::make('nama_alat')
+                    ->label('Nama Alat')
+                    ->searchable()
+                    ->sortable()
+                    ->visible(fn($livewire) => $livewire->activeTab === 'alat'),
+                TextColumn::make('ruangan')
+                    ->label('Lokasi Alat')
+                    ->searchable()
+                    ->sortable()
+                    ->visible(fn($livewire) => $livewire->activeTab === 'alat'),
             ])
             ->actions([
                 EditAction::make()
@@ -64,12 +86,44 @@ class MasterDataResource extends Resource
                             ];
                         }
 
+                        if ($livewire->activeTab === 'alat') {
+                            return [
+                                Forms\Components\TextInput::make('id_alat_absen')
+                                    ->label('ID Alat')
+                                    ->required()
+                                    ->maxLength(20)
+                                    ->unique('alat_absen', 'id_alat_absen', ignoreRecord: true),
+                                Forms\Components\TextInput::make('nama_alat')
+                                    ->label('Nama Alat')
+                                    ->required()
+                                    ->maxLength(45),
+                                Forms\Components\TextInput::make('ruangan')
+                                    ->label('Lokasi Alat')
+                                    ->required()
+                                    ->maxLength(45),
+                            ];
+                        }
+
                         return [
                             Forms\Components\TextInput::make('nama_ruangan')
                                 ->label('Nama Ruangan')
                                 ->required()
                                 ->maxLength(255),
                         ];
+                    })
+                    ->using(function ($data, $record) {
+                        if ($record instanceof Smt) {
+                            $record->update($data);
+                        } elseif ($record instanceof Alat) {
+                            $record->update([
+                                'id_alat_absen' => $data['id_alat_absen'],
+                                'nama_alat' => $data['nama_alat'],
+                                'ruangan' => $data['ruangan']
+                            ]);
+                        } elseif ($record instanceof Ruangan) {
+                            $record->update($data);
+                        }
+                        return $record;
                     }),
                 DeleteAction::make(),
             ])
@@ -79,6 +133,8 @@ class MasterDataResource extends Resource
                 ]),
             ]);
     }
+
+
 
     public static function getPages(): array
     {

@@ -35,7 +35,7 @@ class DaftarKelasResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('ruangan.nama_ruangan')
                     ->label('Ruangan'),
-                Tables\Columns\TextColumn::make('waktu')
+                Tables\Columns\TextColumn::make('waktu_mulai')
                     ->label('Waktu'),
             ])
             ->actions([

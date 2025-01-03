@@ -21,7 +21,8 @@ class Kelas extends Model
         'nama_kelas',
         'id_ruangan',
         'hari',
-        'waktu',
+        'waktu_mulai',
+        'waktu_selesai',
         'id_smt',
         'thn_smt'
     ];

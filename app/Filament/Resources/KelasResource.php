@@ -38,7 +38,7 @@ class KelasResource extends Resource
                 Forms\Components\Select::make('id_akun')
                     ->label('Dosen')
                     ->relationship('account', 'nama', function ($query) {
-                        $query->where('role', 'dosen'); // Filter users with the role 'dosen'
+                        $query->where('role', 'dosen');
                     })
                     ->searchable()
                     ->preload()
@@ -49,7 +49,7 @@ class KelasResource extends Resource
                     ->required()
                     ->maxLength(50),
 
-                Forms\Components\Select::make('id_ruangan')  // Change from 'ruangan' to 'id_ruangan'
+                Forms\Components\Select::make('id_ruangan')
                     ->label('Ruangan')
                     ->options(function () {
                         return \App\Models\Ruangan::query()
@@ -59,6 +59,22 @@ class KelasResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required(),
+
+                Forms\Components\TimePicker::make('waktu_mulai')
+                    ->label('Waktu Mulai')
+                    ->required()
+                    ->seconds(false)
+                    ->displayFormat('H:i')
+                    ->hoursStep(1)
+                    ->minutesStep(1),
+
+                Forms\Components\TimePicker::make('waktu_selesai')
+                    ->label('Waktu Selesai')
+                    ->required()
+                    ->seconds(false)
+                    ->displayFormat('H:i')
+                    ->hoursStep(1)
+                    ->minutesStep(1),
 
                 Forms\Components\Select::make('hari')
                     ->label('Hari')
@@ -70,14 +86,6 @@ class KelasResource extends Resource
                         'Jumat' => 'Jumat',
                     ])
                     ->required(),
-
-                Forms\Components\TimePicker::make('waktu')
-                    ->label('Waktu')
-                    ->required()
-                    ->seconds(false)
-                    ->displayFormat('H:i')
-                    ->hoursStep(1)
-                    ->minutesStep(30),
 
                 Forms\Components\Select::make('id_smt')
                     ->label('Semester')
@@ -128,8 +136,11 @@ class KelasResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('waktu')
-                    ->label('Waktu'),
+                Tables\Columns\TextColumn::make('waktu_mulai')
+                    ->label('Waktu Mulai'),
+
+                Tables\Columns\TextColumn::make('waktu_selesai')
+                    ->label('Waktu Selesai'),
 
 
             ])

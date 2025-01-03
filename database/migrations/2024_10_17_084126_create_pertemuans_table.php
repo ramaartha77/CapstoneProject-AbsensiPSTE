@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('pertemuans', function (Blueprint $table) {
             $table->increments('id_pertemuan');
-            $table->unsignedBigInteger('id_kelas'); // Change to unsignedBigInteger
-            $table->foreign('id_kelas')->references('id_kelas')->on('kelas')->onDelete('cascade'); // Ensure it matches
+            $table->unsignedBigInteger('id_kelas');
+            $table->foreign('id_kelas')->references('id_kelas')->on('kelas')->onDelete('cascade');
             $table->string('nama_pertemuan', 50);
             $table->dateTime('tgl_pertemuan');
             $table->string('materi', 255);
             $table->boolean('aktivasi_absen')->default(false);
+            $table->enum('type_pertemuan', ['online', 'offline']);
             $table->timestamps();
         });
     }

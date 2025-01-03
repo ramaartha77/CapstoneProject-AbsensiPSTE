@@ -9,7 +9,7 @@ class Pertemuan extends Model
     protected $table = 'pertemuans';
     protected $primaryKey = 'id_pertemuan';
 
-    protected $fillable = ['id_kelas', 'id_alat_absen', 'nama_pertemuan', 'tgl_pertemuan', 'materi', 'aktivasi_absen'];
+    protected $fillable = ['id_kelas', 'id_alat_absen', 'nama_pertemuan', 'tgl_pertemuan', 'materi', 'aktivasi_absen', 'type_pertemuan'];
 
     // Relasi ke kelas
     public function kelas()

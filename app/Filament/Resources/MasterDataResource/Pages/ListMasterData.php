@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MasterDataResource\Pages;
 use App\Filament\Resources\MasterDataResource;
 use App\Models\Ruangan;
 use App\Models\Smt;
+use App\Models\Alat;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Pages\ListRecords;
@@ -23,9 +24,17 @@ class ListMasterData extends ListRecords
         return [
             Actions\CreateAction::make()
                 ->label('Tambah Data')
-                ->modalHeading(fn() => 'Tambah ' . ($this->activeTab === 'semester' ? 'Semester' : 'Ruangan'))
+                ->modalHeading(fn() => 'Tambah ' . match ($this->activeTab) {
+                    'semester' => 'Semester',
+                    'alat' => 'Alat',
+                    default => 'Ruangan'
+                })
                 ->model(Ruangan::class)
-                ->modelLabel(fn() => $this->activeTab === 'semester' ? 'Semester' : 'Ruangan')
+                ->modelLabel(fn() => match ($this->activeTab) {
+                    'semester' => 'Semester',
+                    'alat' => 'Alat',
+                    default => 'Ruangan'
+                })
                 ->form(function () {
                     if ($this->activeTab === 'semester') {
                         return [
@@ -33,11 +42,29 @@ class ListMasterData extends ListRecords
                                 ->label('ID Semester')
                                 ->required()
                                 ->maxLength(255)
-                                ->unique('t_smt', 'id_smt'),  // Add unique validation
+                                ->unique('t_smt', 'id_smt'),
                             Forms\Components\TextInput::make('nama_smt')
                                 ->label('Nama Semester')
                                 ->required()
                                 ->maxLength(255),
+                        ];
+                    }
+
+                    if ($this->activeTab === 'alat') {
+                        return [
+                            Forms\Components\TextInput::make('id_alat_absen')
+                                ->label('ID Alat')
+                                ->required()
+                                ->maxLength(20)
+                                ->unique('alat_absen', 'id_alat_absen'),
+                            Forms\Components\TextInput::make('nama_alat')
+                                ->label('Nama Alat')
+                                ->required()
+                                ->maxLength(45),
+                            Forms\Components\TextInput::make('ruangan')
+                                ->label('Lokasi Alat')
+                                ->required()
+                                ->maxLength(45),
                         ];
                     }
 
@@ -50,10 +77,14 @@ class ListMasterData extends ListRecords
                 })
                 ->using(function (array $data) {
                     if ($this->activeTab === 'semester') {
-                        // For semester, use the provided ID
                         return Smt::create($data);
+                    } elseif ($this->activeTab === 'alat') {
+                        return Alat::create([
+                            'id_alat_absen' => $data['id_alat_absen'],
+                            'nama_alat' => $data['nama_alat'],
+                            'ruangan' => $data['ruangan']
+                        ]);
                     } else {
-                        // For ruangan, get the next ID manually
                         $nextId = DB::table('t_ruangan')->max('id_ruangan') + 1;
                         return Ruangan::create([
                             'id_ruangan' => $nextId,
@@ -68,15 +99,14 @@ class ListMasterData extends ListRecords
     {
         return [
             'ruangan' => Tab::make('Ruangan')
-                ->modifyQueryUsing(function (Builder $query) {
-                    return Ruangan::query();
-                })
+                ->modifyQueryUsing(fn(Builder $query) => Ruangan::query())
                 ->badge(Ruangan::count()),
             'semester' => Tab::make('Semester')
-                ->modifyQueryUsing(function (Builder $query) {
-                    return Smt::query();
-                })
+                ->modifyQueryUsing(fn(Builder $query) => Smt::query())
                 ->badge(Smt::count()),
+            'alat' => Tab::make('Alat')
+                ->modifyQueryUsing(fn(Builder $query) => Alat::query())
+                ->badge(Alat::count()),
         ];
     }
 

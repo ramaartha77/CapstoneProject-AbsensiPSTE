@@ -65,15 +65,15 @@ class MatkulResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id_matkul')
                     ->label('ID Matkul')
-                    ->searchable(), // Make ID Matkul searchable
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('account.nama')
                     ->label('Dosen')
-                    ->searchable(), // Make Dosen searchable
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('nama_matkul')
                     ->label('Nama Matkul')
-                    ->searchable(), // Make Nama Matkul searchable
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('sks')
                     ->label('SKS'),

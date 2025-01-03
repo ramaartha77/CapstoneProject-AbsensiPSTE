@@ -31,7 +31,7 @@ class PilihkelasResource extends Resource
         return $form
             ->schema([
                 Section::make('Pilih Kelas')
-                    ->description('Silakan pilih 7 kelas yang akan diambil')
+                    ->description('Silakan pilih kelas yang akan diambil')
                     ->schema([
                         Forms\Components\Select::make('kelas_1')
                             ->label('Kelas 1')

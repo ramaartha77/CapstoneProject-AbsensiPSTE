@@ -81,9 +81,9 @@ class Login extends BaseLogin
     protected function redirectToAppropriatePanel(string $role): LoginResponse
     {
         $redirectUrl = match ($role) {
-            'admin' => '/admin', // Changed from /admin/dashboard
-            'dosen' => '/dosen', // Changed from /dosen/dashboard
-            'mahasiswa' => '/mahasiswa', // Changed from /mahasiswa/dashboard
+            'admin' => '/admin',
+            'dosen' => '/dosen',
+            'mahasiswa' => '/mahasiswa',
             default => '/',
         };
 

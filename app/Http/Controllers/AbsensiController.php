@@ -18,8 +18,6 @@ use App\Models\Kelas;
 class AbsensiController extends Controller
 {
 
-
-
     // Fungsi untuk mencatat absensi (route api.php)
     public function store(Request $request)
     {

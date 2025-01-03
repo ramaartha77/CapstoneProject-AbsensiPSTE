@@ -7,68 +7,46 @@ return [
     | Default Queue Connection Name
     |--------------------------------------------------------------------------
     |
-    | Laravel's queue API supports an assortment of back-ends via a single
-    | API, giving you convenient access to each back-end using the same
-    | syntax for every one. Here you may define a default connection.
+    | Redis menjadi pilihan default untuk produksi karena performa yang cepat 
+    | dan efisiensi memori yang baik.
     |
     */
 
-    'default' => env('QUEUE_CONNECTION', 'sync'),
+    'default' => env('QUEUE_CONNECTION', 'redis'),
 
     /*
     |--------------------------------------------------------------------------
     | Queue Connections
     |--------------------------------------------------------------------------
     |
-    | Here you may configure the connection information for each server that
-    | is used by your application. A default configuration has been added
-    | for each back-end shipped with Laravel. You are free to add more.
-    |
-    | Drivers: "sync", "database", "beanstalkd", "sqs", "redis", "null"
+    | Hanya konfigurasi yang digunakan disimpan di sini agar lebih ringkas.
     |
     */
 
     'connections' => [
 
+        // Driver Sync (untuk pengembangan lokal)
         'sync' => [
             'driver' => 'sync',
         ],
 
+        // Driver Database (fallback jika Redis tidak tersedia)
         'database' => [
             'driver' => 'database',
             'table' => 'jobs',
-            'queue' => 'default',
+            'queue' => env('DB_QUEUE', 'default'),
             'retry_after' => 90,
-            'after_commit' => false,
+            'after_commit' => true,
         ],
 
-        'beanstalkd' => [
-            'driver' => 'beanstalkd',
-            'host' => 'localhost',
-            'queue' => 'default',
-            'retry_after' => 90,
-            'block_for' => 0,
-            'after_commit' => false,
-        ],
-
-        'sqs' => [
-            'driver' => 'sqs',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'prefix' => env('SQS_PREFIX', 'https://sqs.us-east-1.amazonaws.com/your-account-id'),
-            'queue' => env('SQS_QUEUE', 'default'),
-            'suffix' => env('SQS_SUFFIX'),
-            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-            'after_commit' => false,
-        ],
-
+        // Driver Redis (default untuk produksi)
         'redis' => [
             'driver' => 'redis',
             'connection' => 'default',
             'queue' => env('REDIS_QUEUE', 'default'),
-            'retry_after' => 90,
-            'block_for' => null,
-            'after_commit' => false,
+            'retry_after' => env('REDIS_RETRY_AFTER', 60), // Lebih cepat untuk retry
+            'block_for' => 5, // Menunggu selama 5 detik jika queue kosong
+            'after_commit' => true,
         ],
 
     ],
@@ -78,9 +56,7 @@ return [
     | Failed Queue Jobs
     |--------------------------------------------------------------------------
     |
-    | These options configure the behavior of failed queue job logging so you
-    | can control which database and table are used to store the jobs that
-    | have failed. You may change them to any database / table you wish.
+    | Logging untuk pekerjaan yang gagal, agar mudah dianalisa dan diperbaiki.
     |
     */
 

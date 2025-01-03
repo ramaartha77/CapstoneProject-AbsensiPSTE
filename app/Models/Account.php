@@ -9,9 +9,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
 
+use Laravel\Sanctum\HasApiTokens;
+
 
 class Account extends Authenticatable implements FilamentUser, HasName
 {
+    use HasApiTokens;
     use Notifiable;
 
     protected $table = 'accounts';
@@ -39,7 +42,7 @@ class Account extends Authenticatable implements FilamentUser, HasName
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true; // Or implement your own logic here
+        return true;
     }
 
     public function getName(): string
